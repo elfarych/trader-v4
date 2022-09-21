@@ -16,7 +16,6 @@ def create_order(data, client, precisions):
     print(new_order)
     client.new_order(
         symbol=symbol,
-        newClientOrderId=new_order['clientOrderId'],
         type="TAKE_PROFIT_MARKET",
         side="BUY",
         stopPrice=1200,
@@ -24,7 +23,6 @@ def create_order(data, client, precisions):
     )
     client.new_order(
         symbol=symbol,
-        newClientOrderId=new_order['clientOrderId'],
         type="STOP_MARKET",
         side="BUY",
         stopPrice=1360,
