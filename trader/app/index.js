@@ -42,8 +42,11 @@ async function start () {
     })
 }
 
-function launch () {
-    start()
+async function launch () {
+    await start()
+
+    telegramBot.sendTelegramMessage(`${getInTradeCoins().length} coins in trade...`)
+
     setInterval(() => {
         start().then(() => {
             telegramBot.sendTelegramMessage(`${getInTradeCoins().length} coins in trade...`)
