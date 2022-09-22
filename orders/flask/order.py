@@ -13,7 +13,6 @@ def create_order(data, client, precisions):
         type="MARKET",
         quantity=quantity
     )
-    print(new_order)
     client.new_order(
         symbol=symbol,
         type="TAKE_PROFIT_MARKET",
