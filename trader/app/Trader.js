@@ -3,7 +3,7 @@ const WebSocket = require("ws")
 const telegramSender = require('./sender')
 const config = require('./config')
 const envConfig = require('../env_config')
-
+const order = require('./order')
 
 class Trader {
     coin
@@ -132,6 +132,22 @@ class Trader {
     async createOrder(params) {
         const {stopLoss, takeProfit, orderPrice, orderType} = params
         const ticker = this.getCoin()
+
+        const orderCreator = new order.Order( parseFloat(orderPrice.toFixed(ticker.digits)), ticker.symbol.toUpperCase() + 'USDT')
+
+        if (orderType.toUpperCase() === 'BUY') {
+            orderCreator.createBuyOrder({
+                takeProfit: parseFloat(takeProfit.toFixed(ticker.digits)),
+                stopLoss: parseFloat(stopLoss.toFixed(ticker.digits))
+            })
+        }
+
+        if (orderType.toUpperCase() === 'SELL') {
+            orderCreator.createSellOrder({
+                takeProfit: parseFloat(takeProfit.toFixed(ticker.digits)),
+                stopLoss: parseFloat(stopLoss.toFixed(ticker.digits))
+            })
+        }
 
 
 
