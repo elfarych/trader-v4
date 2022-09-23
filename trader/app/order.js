@@ -22,9 +22,9 @@ class Order {
     price
     symbol
 
-    constructor(price, symbol) {
+    constructor(coin, price) {
         this.price = price
-        this.symbol = symbol
+        this.symbol = coin.symbol
     }
 
     async createBuyOrder(params = {}) {
@@ -70,8 +70,9 @@ class Order {
 
     async createSellOrder(params = {}) {
         await binance
-            .futuresMarketSell(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]))
+            .futuresMarketSell(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]), { newOrderRespType: 'RESULT' })
             .then(res => {
+                console.log(res)
                 if (res.msg) {
                     telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
                 } else {
