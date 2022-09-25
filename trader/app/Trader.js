@@ -133,20 +133,14 @@ class Trader {
         const {stopLoss, takeProfit, orderPrice, orderType} = params
         const ticker = this.getCoin()
 
-        const orderCreator = new order.Order( parseFloat(orderPrice.toFixed(ticker.digits)), ticker.symbol.toUpperCase() + 'USDT')
+        const orderCreator = new order.Order(ticker, parseFloat(orderPrice.toFixed(ticker.digits)))
 
         if (orderType.toUpperCase() === 'BUY') {
-            orderCreator.createBuyOrder({
-                takeProfit: parseFloat(takeProfit.toFixed(ticker.digits)),
-                stopLoss: parseFloat(stopLoss.toFixed(ticker.digits))
-            })
+            orderCreator.createBuyOrder()
         }
 
         if (orderType.toUpperCase() === 'SELL') {
-            orderCreator.createSellOrder({
-                takeProfit: parseFloat(takeProfit.toFixed(ticker.digits)),
-                stopLoss: parseFloat(stopLoss.toFixed(ticker.digits))
-            })
+            orderCreator.createSellOrder()
         }
 
 

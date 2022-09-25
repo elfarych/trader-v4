@@ -21,103 +21,80 @@ async function setPrecisions() {
 class Order {
     price
     symbol
+    coin
 
     constructor(coin, price) {
+        this.coin = coin
         this.price = price
-        this.symbol = coin.symbol
+        this.symbol = coin.symbol + 'USDT'
     }
 
-    async createBuyOrder(params = {}) {
+    async cancelOrders() {
+        await binance.futuresCancelAll(this.symbol)
+    }
+
+    async createBuyOrder() {
+        await this.cancelOrders()
+
         await binance
-            .futuresMarketBuy(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]))
-            .then(res => {
+            .futuresMarketBuy(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]), {newOrderRespType: 'RESULT'})
+            .then(async (res) => {
+
+                const takeProfitPrice = parseFloat(res.avgPrice) + parseFloat(this.coin.profit_pips)
+                const stopLossPrice = parseFloat(res.avgPrice) - parseFloat(this.coin.loss_pips)
+
+                await this.createSellStopOrder(stopLossPrice, 'STOP_MARKET')
+                setTimeout(() => {
+                    this.createSellStopOrder(takeProfitPrice, 'TAKE_PROFIT_MARKET')
+                }, 2000)
+
                 if (res.msg) {
                     telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
                 } else {
                     telegram.sendTelegramMessage(`${this.symbol} - Order filled...`)
                 }
             })
-
-        await binance
-            .futuresSell(this.symbol, null, null, {
-                type: 'TAKE_PROFIT_MARKET',
-                closePosition: true,
-                stopPrice: params.takeProfit,
-                newOrderRespType: 'RESULT'
-            })
-            .then(res => {
-                if (res.msg) {
-                    telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
-                }
-                this.checkStatus(res.orderId.toString())
-            })
-
-        await binance
-            .futuresSell(this.symbol, null, null, {
-                type: 'STOP_MARKET',
-                closePosition: true,
-                stopPrice: params.stopLoss,
-                newOrderRespType: 'RESULT'
-            })
-            .then(res => {
-                if (res.msg) {
-                    telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
-                }
-                this.checkStatus(res.orderId.toString())
-            })
     }
 
+    async createSellOrder() {
+        await this.cancelOrders()
 
-    async createSellOrder(params = {}) {
         await binance
-            .futuresMarketSell(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]), { newOrderRespType: 'RESULT' })
-            .then(res => {
-                console.log(res)
+            .futuresMarketSell(this.symbol, (envConfig.ORDER_SIZE / this.price).toFixed(precisions[this.symbol]), {newOrderRespType: 'RESULT'})
+            .then(async (res) => {
+
+                const takeProfitPrice = parseFloat(res.avgPrice) - parseFloat(this.coin.profit_pips)
+                const stopLossPrice = parseFloat(res.avgPrice) + parseFloat(this.coin.loss_pips)
+
+                await this.createBuyStopOrder(stopLossPrice, 'STOP_MARKET')
+                setTimeout(() => {
+                    this.createBuyStopOrder(takeProfitPrice, 'TAKE_PROFIT_MARKET')
+                }, 2000)
+
                 if (res.msg) {
                     telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
                 } else {
                     telegram.sendTelegramMessage(`${this.symbol} - Order filled...`)
                 }
             })
+    }
 
+    async createSellStopOrder(stopPrice, type) {
         await binance
-            .futuresBuy(this.symbol, null, null, {
-                type: 'TAKE_PROFIT_MARKET',
+            .futuresSell(this.symbol, null, null, {
+                type,
                 closePosition: true,
-                stopPrice: params.takeProfit,
-                newOrderRespType: 'RESULT'
-            })
-            .then(res => {
-                if (res.msg) {
-                    telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
-                }
-                this.checkStatus(res.orderId.toString())
-            })
-
-        await binance
-            .futuresBuy(this.symbol, null, null, {
-                type: 'STOP_MARKET',
-                closePosition: true,
-                stopPrice: params.stopLoss,
-                newOrderRespType: 'RESULT'
-            })
-            .then(res => {
-                if (res.msg) {
-                    telegram.sendTelegramMessage(`${this.symbol} - ${res.msg}`)
-                }
-                this.checkStatus(res.orderId.toString())
+                stopPrice
             })
     }
 
-    async checkStatus(orderId) {
-        const status = await binance.futuresOrderStatus(this.symbol, {orderId})
-        if (status.status === 'NEW') {
-            setTimeout(() => {
-                this.checkStatus(orderId)
-            }, 5000)
-        } else {
-            binance.futuresCancelAll(this.symbol)
-        }
+    async createBuyStopOrder(stopPrice, type) {
+        await binance
+            .futuresBuy(this.symbol, null, null, {
+                type,
+                closePosition: true,
+                stopPrice
+            })
     }
 }
 
